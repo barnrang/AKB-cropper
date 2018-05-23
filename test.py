@@ -12,7 +12,9 @@ parser.add_argument('-o', dest='output_path', default='outputs/cropped.jpg', hel
 parser.add_argument('--ocr', dest='ocr', help='Enable OCR detection', action='store_true')
 parser.add_argument('--x-th', dest='x_th', type=int, default=30, help='X threshold, to consider both horizontal line can form a rectangle')
 parser.add_argument('--y-th', dest='y_th', type=int, default=5, help='Y threshold, to consider both line are on the same line using diff-y')
+parser.add_argument('--all', dest='save_all', help='Save all pair', action='store_true')
 parser.set_defaults(ocr=False)
+parser.set_defaults(save_all=False)
 
 args = parser.parse_args()
 
@@ -35,6 +37,7 @@ def choose_pair(pairs):
         idx_order = np.argsort([x[0]+x[1] for x in four_points])
         top_left = four_points[idx_order[0]]
         below_right = four_points[idx_order[-1]]
+        print(four_points)
         cropped = img[top_left[1]:below_right[1],top_left[0]:below_right[0]]
         if args.ocr:
             text = pytesseract.image_to_string(cropped)
@@ -44,7 +47,7 @@ def choose_pair(pairs):
         if np.mean(cropped) > max_mean:
             max_mean = np.mean(cropped)
             max_crop = cropped.copy()
-    return max_crop
+    cv2.imwrite(args.output_path,max_crop)
 
 def cropped_all(pairs):
     for idx, pair in enumerate(pairs):
@@ -123,6 +126,8 @@ for i in np.flip(np.argsort(dist),0):
              and np.abs(now_line[2]-test_line[2]) < differ_threshold:
                 line_pairs.append((now_line, test_line))
 
-cropped_all(line_pairs)
-# cropped_img = choose_pair(line_pairs)
-# cv2.imwrite(args.output_path,cropped_img)
+# Chose
+if args.save_all:
+    cropped_all(line_pairs)
+else:
+    choose_pair(line_pairs)
